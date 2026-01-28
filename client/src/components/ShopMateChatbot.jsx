@@ -1,28 +1,28 @@
-
 import React from 'react';
 import ChatBot from 'react-chatbotify';
 import axios from 'axios';
 
 const ShopMateChatbot = () => {
-    // Track conversation history
     const historyRef = React.useRef([]);
 
-    // 1. Define the API call handler
+    const API = import.meta.env.VITE_API_URL;
+
     const fetchPolicyAnswer = async (params) => {
         try {
             const userQuestion = params.userInput;
 
-            // Add user message to history
             historyRef.current.push({ role: 'user', content: userQuestion });
 
-            const response = await axios.post('http://localhost:3001/api/ai/ask-policy', {
-                question: userQuestion,
-                history: historyRef.current // Send full history
-            });
+            const response = await axios.post(
+                `${API}/api/ai/ask-policy`,
+                {
+                    question: userQuestion,
+                    history: historyRef.current
+                }
+            );
 
             const botAnswer = response.data.answer;
 
-            // Add bot answer to history
             historyRef.current.push({ role: 'model', content: botAnswer });
 
             return botAnswer;
@@ -30,9 +30,8 @@ const ShopMateChatbot = () => {
             console.error("Chatbot API Error:", error);
             return "I apologize, but I'm having trouble accessing the policy right now. Please try again later.";
         }
-    }
+    };
 
-    // 2. Define the flow
     const flow = {
         start: {
             message: "Hi! I'm your ShopMATE policy assistant. How can I help you with returns or refunds today?",
@@ -44,9 +43,7 @@ const ShopMateChatbot = () => {
         }
     };
 
-    return (
-        <ChatBot flow={flow} />
-    );
+    return <ChatBot flow={flow} />;
 };
 
 export default ShopMateChatbot;

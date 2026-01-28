@@ -1,0 +1,28 @@
+### macOS ###
+# General
+.DS_Store
+
+package-lock.json
+
+# Dependency directories
+node_modules
+dist
+build
+jspm_packages
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+

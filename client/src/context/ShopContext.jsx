@@ -3,6 +3,8 @@ import axios from 'axios';
 
 export const ShopContext = createContext();
 
+const API = import.meta.env.VITE_API_URL;
+
 export const ShopProvider = ({ children }) => {
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
@@ -15,7 +17,9 @@ export const ShopProvider = ({ children }) => {
     const fetchProducts = async (search = '') => {
         try {
             setLoading(true);
-            const response = await axios.get(`http://localhost:3001/api/products?search=${search}`);
+            const response = await axios.get(
+                `${API}/api/products?search=${search}`
+            );
             setProducts(response.data);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -29,7 +33,9 @@ export const ShopProvider = ({ children }) => {
             const existingItem = prevCart.find((item) => item._id === product._id);
             if (existingItem) {
                 return prevCart.map((item) =>
-                    item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
+                    item._id === product._id
+                        ? { ...item, quantity: item.quantity + 1 }
+                        : item
                 );
             }
             return [...prevCart, { ...product, quantity: 1 }];
@@ -37,7 +43,9 @@ export const ShopProvider = ({ children }) => {
     };
 
     const removeFromCart = (productId) => {
-        setCart((prevCart) => prevCart.filter((item) => item._id !== productId));
+        setCart((prevCart) =>
+            prevCart.filter((item) => item._id !== productId)
+        );
     };
 
     const updateQuantity = (productId, amount) => {
@@ -45,7 +53,9 @@ export const ShopProvider = ({ children }) => {
             prevCart.map((item) => {
                 if (item._id === productId) {
                     const newQuantity = item.quantity + amount;
-                    return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;
+                    return newQuantity > 0
+                        ? { ...item, quantity: newQuantity }
+                        : item;
                 }
                 return item;
             })

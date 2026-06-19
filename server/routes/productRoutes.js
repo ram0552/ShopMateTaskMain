@@ -11,17 +11,19 @@ const {
     generateDetailsFromImage,
     semanticSearch
 } = require('../controllers/productController');
+const authenticate = require('../middleware/authenticate');
+const autherizeRoles = require('../middleware/autherization');
 
 router.get('/search/semantic', semanticSearch);
 
 router.route('/')
-    .get(getProducts)
-    .post(createProduct);
+    .get(authenticate,autherizeRoles('admin','user'),getProducts)
+    .post(authenticate,autherizeRoles('admin'),createProduct);
 
 router.route('/:id')
-    .get(getProductById)
-    .put(updateProduct)
-    .delete(deleteProduct);
+    .get(authenticate,autherizeRoles('admin','user'),getProductById)
+    .put(authenticate,autherizeRoles('admin'),updateProduct)
+    .delete(authenticate,autherizeRoles('admin'),deleteProduct);
 
 router.post("/generate-description", generateDescription);
 

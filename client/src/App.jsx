@@ -8,6 +8,8 @@ import Cart from './pages/Cart';
 import AdminDashboard from './pages/AdminDashboard';
 import SemanticSearch from './pages/SemanticSearch';
 import ShopMateChatbot from './components/ShopMateChatbot';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 function App() {
     return (
@@ -16,6 +18,8 @@ function App() {
                 <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
                     <Navbar />
                     <Routes>
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
                         <Route path="/" element={<Home />} />
                         <Route path="/product/:id" element={<ProductDetails />} />
                         <Route path="/cart" element={<Cart />} />
@@ -26,6 +30,7 @@ function App() {
                 </div>
             </Router>
         </ShopProvider>
+        
     );
 }
 

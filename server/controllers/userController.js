@@ -6,6 +6,23 @@ const jwt = require('jsonwebtoken');
 const registerUser = async (req, res) => {
     try {
         const {username, email, password, role} = req.body;
+         if (!username?.trim()) {
+      return res.status(400).json({
+        message: "Username is required"
+      });
+    }
+
+    if (!email?.trim()) {
+      return res.status(400).json({
+        message: "Email is required"
+      });
+    }
+
+    if (!password?.trim()) {
+      return res.status(400).json({
+        message: "Password is required"
+      });
+    }
         const db = getDB();
 
         // Check if user already exists
@@ -105,6 +122,21 @@ const loginUser = async (req, res) => {
         });
     }
 };
+
+const refreshUserToken = async (req, res) => {
+    try {
+        const {refreshToken} = req.body;
+        if (!refreshToken){
+            return res.status(401).json({message:"Refresh token missing"});
+        }
+        
+    } catch (error) {
+        res.status(500).json({
+            message: "Server error",
+            error: error.message
+        });
+    }
+}
    
 
 module.exports = {

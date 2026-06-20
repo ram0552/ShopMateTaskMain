@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
-
+import api from '../utils/api';
 export const ShopContext = createContext();
 
 export const ShopProvider = ({ children }) => {
@@ -15,7 +15,7 @@ export const ShopProvider = ({ children }) => {
     const fetchProducts = async (search = '') => {
         try {
             setLoading(true);
-            const response = await axios.get(`http://localhost:3001/api/products?search=${search}`);
+            const response = await api.get(`/products?search=${search}`);
             setProducts(response.data);
         } catch (error) {
             console.error('Error fetching products:', error);

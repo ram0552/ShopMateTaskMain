@@ -52,6 +52,9 @@ const Navbar = () => {
                                 </span>
                             )}
                         </Link>
+                        <Link to="/logout" className='text-gray-500 hover:text-black font-medium text-sm'>
+                            Logout
+                        </Link>
                     </div>
                 </div>
             </div>

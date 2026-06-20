@@ -10,8 +10,8 @@ const verifyEmail= async (req,res)=>{
             {email:decoded.email},
             {
                 $set:{
-                    isVerified=true,
-                    verifiedat:new Date()
+                    isVerified:true,
+                    verifiedAt:new Date()
                 }
             }
         );

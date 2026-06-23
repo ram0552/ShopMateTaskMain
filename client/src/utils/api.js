@@ -15,35 +15,88 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// api.interceptors.response.use(
+//   (response) => response,
+//   async (error) => {
+//     const originalRequest = error.config;
+//     if (error.response && error.response.status === 401 && !originalRequest._retry) {
+//       originalRequest._retry = true;
+//   }
+//   try {
+//     const refreshToken = localStorage.getItem("refreshToken");
+//     if (refreshToken) {
+//       const res = await axios.post("http://localhost:3001/api/users/refresh", {refreshToken });
+//       const newAccessToken = res.data.accessToken;
+//       if(res.status === 200) {
+//         localStorage.setItem("accessToken", newAccessToken);
+//         localStorage.setItem("refreshToken", res.data.refreshToken);
+//         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+//         return api(originalRequest);
+//       }
+//     }
+//     } catch (err) {
+//         localStorage.removeItem("accessToken");
+//         localStorage.removeItem("refreshToken");
+//         localStorage.removeItem("user");
+//         if (window.location.pathname !== "/login") {
+//           window.location.href = "/login";
+//         }
+//     }
+//     return Promise.reject(error);
+//     }
+// );
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
-  }
-  try {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (refreshToken) {
-      const res = await axios.post("http://localhost:3001/api/users/refresh", {refreshToken });
-      const newAccessToken = response.data.accessToken;
-      if(res.status === 200) {
+
+      try {
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        if (!refreshToken) {
+          throw new Error("No refresh token");
+        }
+
+        const res = await axios.post(
+          "http://localhost:3001/api/users/refresh",
+          { refreshToken }
+        );
+
+        const newAccessToken = res.data.accessToken;
+
         localStorage.setItem("accessToken", newAccessToken);
-        localStorage.setItem("refreshToken", res.data.refreshToken);
-        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+
+        if (res.data.refreshToken) {
+          localStorage.setItem(
+            "refreshToken",
+            res.data.refreshToken
+          );
+        }
+
+        originalRequest.headers.Authorization =
+          `Bearer ${newAccessToken}`;
+
         return api(originalRequest);
-      }
-    }
-    } catch (err) {
+      } catch (err) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
-        }
+
+        window.location.href = "/login";
+
+        return Promise.reject(err);
+      }
     }
+
     return Promise.reject(error);
-    }
+  }
 );
 
 export const logout = () => {

@@ -2,7 +2,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const { createAgent } = require("langchain");
-const { checkOrderStatusTool } = require("../tools/shopTools");
+const { checkOrderStatusTool,searchProductsTool,getRefundPolicyTool } = require("../tools/shopTools");
 
 
 
@@ -10,7 +10,9 @@ process.env.GOOGLE_API_KEY = process.env.GEMINI_API_KEY;
 
 const agent = createAgent({
   model: "google-genai:gemini-2.5-flash",
-  tools: [checkOrderStatusTool],
+  tools: [checkOrderStatusTool,searchProductsTool,getRefundPolicyTool],
+
+  
   systemPrompt:
     "You are a helpful customer support assistant for ShopMate. " +
     "ShopMate is an online store. " +

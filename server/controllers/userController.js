@@ -178,11 +178,111 @@ const refreshUserToken = async (req, res) => {
     }
 }
 
+const sendPasswordResetOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+        const db = getDB();
+        const userCollections = db.collection('users');
+        const normalizedEmail = email.toLowerCase();
+        const user = await userCollections.findOne({ email: normalizedEmail });
+        if (!user) {
+            return res.status(404).json({ message: "No account found with this email" });
+        }
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpHash = await bcrypt.hash(otp, 10);
+        const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+        console.log(`Generated OTP for ${normalizedEmail}: ${otp} (expires at ${otpExpiry})`);
+
+        await userCollections.updateOne(
+            {_id: user._id},
+            {$set: {reset_password_otp_hash: otpHash,
+                  reset_password_otp_expires_at: otpExpiry,
+                updated_at: new Date()
+                }}
+        );
+        const emailResult=await sendEmail(
+            {
+                to: normalizedEmail,
+                subject: "ShopMate Password Reset OTP",
+                text: `Your OTP for password reset is: ${otp}. It will expire in 15 minutes.`,
+                html: `<p>Your OTP for password reset is: <strong>${otp}</strong>. It will expire in 15 minutes.</p>`
+            }
+        )
+        console.log(`Email sent to ${normalizedEmail}: ${emailResult}`);
+        res.status(200).json({ message: "Password reset OTP sent to your email" });
+
+    }
+    catch (error) {
+        res.status(500).json({
+            message: "Failed to send password reset OTP",  
+            error: error.message
+        });
+    }
+}
+
+const resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword ,confirmPassword} = req.body;
+        if (!email || !otp || !newPassword || !confirmPassword) {
+            return res.status(400).json({ message: "Email, OTP, new password and confirm password are required" });
+        }
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: "New password and confirm password do not match" });
+        }
+        const db = getDB();
+        const userCollections = db.collection('users');
+        const normalizedEmail = email.toLowerCase();
+        const user = await userCollections.findOne({ email: normalizedEmail });
+        if (!user) {
+            return res.status(404).json({ message: "No account found with this email" });
+        }
+        if (!user.reset_password_otp_hash || !user.reset_password_otp_expires_at) {
+            return res.status(400).json({ message: "No OTP request found for this email" });
+        }
+        
+        const otpExpired = new Date() > user.reset_password_otp_expires_at;
+        if (otpExpired) {
+            return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+        }
+
+
+        const validotp = await bcrypt.compare(otp, user.reset_password_otp_hash);
+        if (!validotp) {
+            return res.status(400).json({ message: "Invalid OTP" });
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await userCollections.updateOne(
+            { _id: user._id },
+            { $set: { 
+                password: hashedPassword,
+                refreshToken: null, 
+                reset_password_otp_hash: null, 
+                reset_password_otp_expires_at: null, 
+                updated_at: new Date() 
+            }
+         }
+        );
+        res.status(200).json({ message: "Password Updated successfully. Please login with your new password" });
+    }
+    catch (error) {
+        res.status(500).json({
+            message: "Failed to reset password",
+            error: error.message
+        });
+    }
+}
+
 module.exports = {
     registerUser,
     generateAccessToken,
     generateRefreshToken,
     loginUser,
-    refreshUserToken
+    refreshUserToken,
+    sendPasswordResetOTP,
+    resetPassword
 }
 

@@ -4,11 +4,15 @@ import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 
 const Home = () => {
-    const { products, loading, addToCart } = useContext(ShopContext);
+    const { products, loading, fetchProducts, addToCart } = useContext(ShopContext);
     const [filter, setFilter] = useState('All');
     const [filteredProducts, setFilteredProducts] = useState([]);
 
     const categories = ['All', 'Electronics', 'Clothing', 'Accessories', 'Furniture', 'Home'];
+
+    useEffect(() => {
+        fetchProducts();
+    }, []);
 
     useEffect(() => {
         if (filter === 'All') {

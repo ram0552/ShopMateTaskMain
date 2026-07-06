@@ -2,21 +2,6 @@
 // const { z } = require('zod');
 // const { getDB } = require('../config/db');
 
-// async function checkOrderStatusFunction({ orderId }) {
-//     try {
-//         const db = getDB();
-//         const order = await db.collection('orders').findone({ orderId });
-//         if (!order) {
-//             return `No Order found  with ID ${orderId}.`;
-//         }
-//         const itemList = order.items.map((item) => `${item.quantity}x${item.name}`).join(', ');
-//         return (
-//             `Order ${order.orderId} contains : ${itemList}. ` + `Current status: ${order.status}.`
-//         );
-//     }catch (err) {
-//         return `Could not look up order ${orderId}. Error: ${err.message}`;
-//     }
-// }
 
 // const checkOrderStatusTool = tool(
 //   async ({ orderId }) => {
@@ -45,22 +30,37 @@ dotenv.config();
 const pinecone = new Pinecone({apiKey:process.env.PINECONE_API_KEY});
 const index = pinecone.index(process.env.PINECONE_INDEX);
 
-async function checkOrderStatusFunction(orderId) {
-    try{
-        const db=getDB();
-        const order=await db.collection('orders').findOne({orderId:orderId});
-        if(!order){
-            return `No order found with id ${orderId}.`;
+// async function checkOrderStatusFunction(orderId) {
+//     try{
+//         const db=getDB();
+//         const order=await db.collection('orders').findOne({orderId:orderId});
+//         console.log("Mongo result:", order);
+//         if(!order){
+//             return `No order found with id ${orderId}.`;
+//         }
+//         const itemList=order.items.map((item)=>`${item.quatity}x${item.name}`).join(', ');
+//         return( `Order ${order.orderId} contains: ${itemList}. Current status: ${order.status}.`);
+//     }
+//     catch(err){
+//         return `Could not look up order ${orderId}:${err.message}`;
+//     }
+// }
+
+async function checkOrderStatusFunction({ orderId }) {
+    try {
+        const db = getDB();
+        const order = await db.collection('orders').findOne({ orderId });
+        if (!order) {
+            return `No Order found  with ID ${orderId}.`;
         }
-        const itemList=order.items.map((item)=>`${item.quatity}x${item.name}`).join(', ');
-        return( `Order ${order.orderId} contains: ${itemList}. Current status: ${order.status}.`);
-    }
-    catch(err){
-        return `Could not look up order ${orderId}:${err.message}`;
+        const itemList = order.items.map((item) => `${item.quantity}x${item.name}`).join(', ');
+        return (
+            `Order ${order.orderId} contains : ${itemList}. ` + `Current status: ${order.status}.`
+        );
+    }catch (err) {
+        return `Could not look up order ${orderId}. Error: ${err.message}`;
     }
 }
-
-
 
 const checkOrderStatusTool=tool(checkOrderStatusFunction,{
     name:'check_order_status',
@@ -74,7 +74,7 @@ const checkOrderStatusTool=tool(checkOrderStatusFunction,{
 });
 
 
-async function searchProductsFunction(query){
+async function searchProductsFunction({query}){
     try{
         const vector=await generateEmbedding(query);
         const response=await index.query({

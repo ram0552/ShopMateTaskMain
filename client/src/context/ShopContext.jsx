@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import api from '../utils/api';
 export const ShopContext = createContext();
@@ -7,20 +7,42 @@ export const ShopProvider = ({ children }) => {
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
+    const isFetching = useRef(false);
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
+    // const fetchProducts = async (search = '') => {
+    //     try {
+    //         setLoading(true);
+    //         const response = await api.get(`/products?search=${search}`);
+    //         setProducts(response.data);
+    //     } catch (error) {
+    //         console.error('Error fetching products:', error);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
 
-    const fetchProducts = async (search = '') => {
+
+    const fetchProducts = async (search = "", force = false) => {
+        if (!force && products.length > 0 && !search) {
+            return;
+        }
+        if (isFetching.current) {
+            return;
+        }
         try {
+            isFetching.current = true;
+            console.log("Fetching products...");
             setLoading(true);
             const response = await api.get(`/products?search=${search}`);
+            console.log("Products response:", response);
             setProducts(response.data);
         } catch (error) {
-            console.error('Error fetching products:', error);
+            console.error("FULL ERROR:", error);
+            console.error("STATUS:", error.response?.status);
+            console.error("DATA:", error.response?.data);
         } finally {
             setLoading(false);
+            isFetching.current = false;
         }
     };
 

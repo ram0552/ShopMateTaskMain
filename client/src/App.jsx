@@ -53,12 +53,16 @@ import ShopMateChatbot from './components/ShopMateChatbot';
 import Logout from './pages/Logout';
 import Registerpage from './pages/Registerpage';
 import Loginpage from './pages/LoginPage';
+import ForgetPasswordPage from './pages/ForgetPasswordPage';
+import BlogAdmin from './pages/BlogAdmin';
+import BlogReview from './pages/BlogReview';
 
 
 // Wraps layout so we can use useLocation inside Router
 function AppLayout() {
     const location = useLocation();
-    const hideNav = location.pathname === '/login' || location.pathname === '/register' 
+    const hideNav = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forget-password'
+    || location.pathname === '/admin/blogs'; 
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
@@ -69,6 +73,7 @@ function AppLayout() {
                 <Route path="/" element={<Navigate to="/login" />} />
                 <Route path="/login" element={<Loginpage />} />
                 <Route path="/register" element={<Registerpage />} />
+                <Route path="/forget-password" element={<ForgetPasswordPage />} />
                 <Route path="/logout" element={<Logout />} />
 
                 {/* Protected: any logged-in user (admin or user) */}
@@ -101,6 +106,23 @@ function AppLayout() {
                         <AdminDashboard />
                     </ProtectedRoute>
                 } />
+               <Route
+                    path="/admin/blogs"
+                    element={
+                        <ProtectedRoute role="admin">
+                            <BlogAdmin />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/blogs/:id/review"
+                    element={
+                        <ProtectedRoute role="admin">
+                            <BlogReview />
+                        </ProtectedRoute>
+                    }
+                />
               
             </Routes>
 

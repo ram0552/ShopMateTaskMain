@@ -23,7 +23,7 @@ const Registerpage = () => {
     setLoading(true);
     setError("");
     try {
-      await axios.post("http://localhost:3001/api/users/register", formData);
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/register`, formData);
       navigate("/login", { state: { message: "Registration successful. Please check your email to verify your account." } });
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed.");

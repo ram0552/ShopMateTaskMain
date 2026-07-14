@@ -1,38 +1,38 @@
 const bcrypt = require('bcrypt');
 
-const {getDB} = require('../config//db');
+const { getDB } = require('../config//db');
 const jwt = require('jsonwebtoken');
 
-const {sendVerificationEmail,sendEmail} = require('../services/sendermail');
+const { sendVerificationEmail, sendEmail } = require('../services/sendermail');
 
 const registerUser = async (req, res) => {
     try {
-        const {username, email, password, role,phone_number} = req.body;
-         if (!username?.trim()) {
-      return res.status(400).json({
-        message: "Username is required"
-      });
-    }
+        const { username, email, password, role, phone_number } = req.body;
+        if (!username?.trim()) {
+            return res.status(400).json({
+                message: "Username is required"
+            });
+        }
 
-    if (!email?.trim()) {
-      return res.status(400).json({
-        message: "Email is required"
-      });
-    }
+        if (!email?.trim()) {
+            return res.status(400).json({
+                message: "Email is required"
+            });
+        }
 
-    if (!password?.trim()) {
-      return res.status(400).json({
-        message: "Password is required"
-      });
-    }
+        if (!password?.trim()) {
+            return res.status(400).json({
+                message: "Password is required"
+            });
+        }
         const db = getDB();
 
         const normalizedEmail = email.toLowerCase();
 
         // Check if user already exists
-        const existingUser = await db.collection('users').findOne({email: normalizedEmail});
+        const existingUser = await db.collection('users').findOne({ email: normalizedEmail });
         if (existingUser) {
-            return res.status(400).json({message: 'Email already in use'});
+            return res.status(400).json({ message: 'Email already in use' });
         }
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -47,25 +47,25 @@ const registerUser = async (req, res) => {
             createdAt: new Date()
         };
         const result = await db.collection('users').insertOne(newUser);
-        const token =jwt.sign({
+        const token = jwt.sign({
             userId: result.insertedId,
             email: normalizedEmail
-            },
+        },
             process.env.JWT_SECRET,
-            {expiresIn: '1d'}
-       );
-       await sendVerificationEmail(normalizedEmail,username , token);
+            { expiresIn: '1d' }
+        );
+        await sendVerificationEmail(normalizedEmail, username, token);
 
-        res.status(201).json({message: 'User registered successfully. please check your email and verify your account ', userId: result.insertedId});
+        res.status(201).json({ message: 'User registered successfully. please check your email and verify your account ', userId: result.insertedId });
     }
     catch (error) {
         res.status(500).json({
-            message:"server error",
+            message: "server error",
             error: error.message
         })
 
     }
-    
+
 }
 
 const generateAccessToken = (user) => {
@@ -76,7 +76,7 @@ const generateAccessToken = (user) => {
             role: user.role
         },
         "access_secret_key",
-        {expiresIn: "15m"}
+        { expiresIn: "15m" }
     );
 };
 
@@ -88,13 +88,13 @@ const generateRefreshToken = (user) => {
             role: user.role
         },
         "refresh_secret_key",
-        {expiresIn: "7d"}
+        { expiresIn: "7d" }
     );
 };
 
 const loginUser = async (req, res) => {
     try {
-        const {email, password} = req.body;
+        const { email, password } = req.body;
         const db = getDB();
 
         const user = await db.collection('users').findOne({
@@ -102,16 +102,16 @@ const loginUser = async (req, res) => {
         });
 
         if (!user) {
-            return res.status(401).json({message: "Invalid email"});
+            return res.status(401).json({ message: "Invalid email" });
         }
         if (!user.isVerified) {
-            return res.status(401).json({message: "Email not verified. Please verify your email before logging in."});
+            return res.status(401).json({ message: "Email not verified. Please verify your email before logging in." });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
-        if(!isMatch) {
-            return res.status(401).json({message: "Invalid Password"});
+        if (!isMatch) {
+            return res.status(401).json({ message: "Invalid Password" });
         }
 
         const accessToken = generateAccessToken(user);
@@ -119,7 +119,7 @@ const loginUser = async (req, res) => {
 
         await db.collection('users').updateOne(
             { _id: user._id },
-            { $set: {refresh_token: refreshToken}}
+            { $set: { refresh_token: refreshToken } }
         );
 
         res.status(200).json({
@@ -133,7 +133,7 @@ const loginUser = async (req, res) => {
                 role: user.role
             }
         });
-    }catch (error) {
+    } catch (error) {
         res.status(500).json({
             message: "Login failed",
             error: error.message
@@ -142,27 +142,27 @@ const loginUser = async (req, res) => {
 };
 
 const refreshUserToken = async (req, res) => {
-    try{
-        const {refreshToken} = req.body;
-        if(!refreshToken) {
-            return res.status(400).json({message: "Refresh token is required"});
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) {
+            return res.status(400).json({ message: "Refresh token is required" });
         }
         let decoded;
         try {
             decoded = jwt.verify(refreshToken, "refresh_secret_key");
         } catch (err) {
-            return res.status(401).json({message: "Invalid refresh token"});
+            return res.status(401).json({ message: "Invalid refresh token" });
         }
         const db = getDB();
-        const user = await db.collection('users').findOne({email: decoded.email,refresh_token: refreshToken});
-        if(!user) {
-            return res.status(401).json({message: "Invalid refresh token"});
+        const user = await db.collection('users').findOne({ email: decoded.email, refresh_token: refreshToken });
+        if (!user) {
+            return res.status(401).json({ message: "Invalid refresh token" });
         }
         const newAccessToken = generateAccessToken(user);
         const newRefreshToken = generateRefreshToken(user);
         await db.collection('users').updateOne(
             { _id: user._id },
-            { $set: {refresh_token: newRefreshToken}}
+            { $set: { refresh_token: newRefreshToken } }
         );
         res.status(200).json({
             message: "Token refreshed successfully",
@@ -198,13 +198,16 @@ const sendPasswordResetOTP = async (req, res) => {
         console.log(`Generated OTP for ${normalizedEmail}: ${otp} (expires at ${otpExpiry})`);
 
         await userCollections.updateOne(
-            {_id: user._id},
-            {$set: {reset_password_otp_hash: otpHash,
-                  reset_password_otp_expires_at: otpExpiry,
-                updated_at: new Date()
-                }}
+            { _id: user._id },
+            {
+                $set: {
+                    reset_password_otp_hash: otpHash,
+                    reset_password_otp_expires_at: otpExpiry,
+                    updated_at: new Date()
+                }
+            }
         );
-        const emailResult=await sendEmail(
+        const emailResult = await sendEmail(
             {
                 to: normalizedEmail,
                 subject: "ShopMate Password Reset OTP",
@@ -218,7 +221,7 @@ const sendPasswordResetOTP = async (req, res) => {
     }
     catch (error) {
         res.status(500).json({
-            message: "Failed to send password reset OTP",  
+            message: "Failed to send password reset OTP",
             error: error.message
         });
     }
@@ -226,7 +229,7 @@ const sendPasswordResetOTP = async (req, res) => {
 
 const resetPassword = async (req, res) => {
     try {
-        const { email, otp, newPassword ,confirmPassword} = req.body;
+        const { email, otp, newPassword, confirmPassword } = req.body;
         if (!email || !otp || !newPassword || !confirmPassword) {
             return res.status(400).json({ message: "Email, OTP, new password and confirm password are required" });
         }
@@ -243,7 +246,7 @@ const resetPassword = async (req, res) => {
         if (!user.reset_password_otp_hash || !user.reset_password_otp_expires_at) {
             return res.status(400).json({ message: "No OTP request found for this email" });
         }
-        
+
         const otpExpired = new Date() > user.reset_password_otp_expires_at;
         if (otpExpired) {
             return res.status(400).json({ message: "OTP has expired. Please request a new one." });
@@ -257,14 +260,15 @@ const resetPassword = async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await userCollections.updateOne(
             { _id: user._id },
-            { $set: { 
-                password: hashedPassword,
-                refreshToken: null, 
-                reset_password_otp_hash: null, 
-                reset_password_otp_expires_at: null, 
-                updated_at: new Date() 
+            {
+                $set: {
+                    password: hashedPassword,
+                    refreshToken: null,
+                    reset_password_otp_hash: null,
+                    reset_password_otp_expires_at: null,
+                    updated_at: new Date()
+                }
             }
-         }
         );
         res.status(200).json({ message: "Password Updated successfully. Please login with your new password" });
     }

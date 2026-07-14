@@ -30,7 +30,7 @@
 //                 </div>
 //             </Router>
 //         </ShopProvider>
-        
+
 //     );
 // }
 
@@ -61,9 +61,12 @@ import BlogReview from './pages/BlogReview';
 // Wraps layout so we can use useLocation inside Router
 function AppLayout() {
     const location = useLocation();
-    const hideNav = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forget-password'
-    || location.pathname === '/admin/blogs'; 
-
+    const hideNav = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forget-password' 
+                    || location.pathname==='/logout';
+        
+    const hideChatbot =
+                 location.pathname.startsWith("/admin")|| location.pathname === '/admin/blogs' 
+                 || location.pathname.startsWith('/admin/blogs/') && location.pathname.endsWith('/review');
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
             {!hideNav && <Navbar />}
@@ -98,7 +101,7 @@ function AppLayout() {
                     </ProtectedRoute>
                 } />
 
-               
+
 
                 {/* Protected: admin only */}
                 <Route path="/admin" element={
@@ -106,7 +109,7 @@ function AppLayout() {
                         <AdminDashboard />
                     </ProtectedRoute>
                 } />
-               <Route
+                <Route
                     path="/admin/blogs"
                     element={
                         <ProtectedRoute role="admin">
@@ -123,10 +126,10 @@ function AppLayout() {
                         </ProtectedRoute>
                     }
                 />
-              
+
             </Routes>
 
-            {!hideNav && <ShopMateChatbot />}
+            {!hideChatbot &&!hideNav && <ShopMateChatbot />}
         </div>
     );
 }

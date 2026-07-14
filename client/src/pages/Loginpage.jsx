@@ -27,7 +27,7 @@ const Loginpage = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await axios.post("http://localhost:3001/api/users/login", formData);
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/login`, formData);
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("refreshToken", response.data.refreshToken);
       localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -70,7 +70,7 @@ const Loginpage = () => {
           <div style={styles.field}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <label style={styles.label}>Password</label>
-              
+
             </div>
             <input
               type="password"

@@ -31,7 +31,7 @@ const ProductDetails = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <Link to="/" className="inline-flex items-center text-gray-500 hover:text-black mb-8">
+            <Link to="/home" className="inline-flex items-center text-gray-500 hover:text-black mb-8">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Shopping
             </Link>
 

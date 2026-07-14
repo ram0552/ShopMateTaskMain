@@ -11,12 +11,14 @@ const genAI = new GoogleGenAI({ apiKey: geminiApiKey });
 const pineconeApiKey = process.env.PINECONE_API_KEY;
 const pineconeIndexName = process.env.PINECONE_INDEX;
 
+
 if (!pineconeApiKey || !pineconeIndexName) {
     console.error("CRITICAL ERROR: PINECONE_API_KEY or PINECONE_INDEX is not defined.");
 }
 
 const pinecone = new Pinecone({ apiKey: pineconeApiKey });
 const index = pinecone.index(pineconeIndexName);
+const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
 
 /*
  * Feature 1: Product Description Generation using AI
@@ -29,12 +31,21 @@ async function generateProductDescription(productName, category) {
         "Under the category: " + category + "\n" +
         "Tone: Professional yet exciting.";
     try {
-        const result = await genAI.models.generateContent(
-            {
-                model: "gemini-2.5-flash",
-                contents: prompt
-            });
+
+        const model= new ChatGoogleGenerativeAI({
+            model: "gemini-2.5-flash",
+            temperature: 0,
+            maxRetries: 2,
+        });
+
+        const result = await model.invoke(prompt);
         return result.text;
+        // const result = await genAI.models.generateContent(
+        //     {
+        //         model: "gemini-2.5-flash",
+        //         contents: prompt
+        //     });
+        // return result.text;
     } catch (error) {
         console.error("Error generating product description:", error);
         return "Description unavailable";

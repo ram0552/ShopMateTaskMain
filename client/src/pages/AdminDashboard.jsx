@@ -3,6 +3,7 @@ import axios from 'axios';
 import api from '../utils/api';
 import { Trash2, Edit, Plus, X, Save, Wand2, Camera } from 'lucide-react';
 
+
 const AdminDashboard = () => {
     const [products, setProducts] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,7 +26,7 @@ const AdminDashboard = () => {
 
     const fetchProducts = async () => {
         try {
-            const response = await api.get('/products');//http://localhost:3001/api/products
+            const response = await api.get('/products');
             setProducts(response.data);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -35,7 +36,7 @@ const AdminDashboard = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this product?')) {
             try {
-                await axios.delete(`http://localhost:3001/api/products/${id}`);
+                await api.delete(`/products/${id}`);
                 fetchProducts();
             } catch (error) {
                 console.error('Error deleting product:', error);
@@ -47,9 +48,9 @@ const AdminDashboard = () => {
         e.preventDefault();
         try {
             if (editingProduct) {
-                await axios.put(`http://localhost:3001/api/products/${editingProduct._id}`, formData);
+                await api.put(`/products/${editingProduct._id}`, formData);
             } else {
-                await axios.post('http://localhost:3001/api/products', formData);
+                await api.post('/products', formData);
             }
             setIsModalOpen(false);
             setEditingProduct(null);
@@ -69,7 +70,7 @@ const AdminDashboard = () => {
 
         setIsGeneratingDescription(true);
         try {
-            const response = await axios.post('http://localhost:3001/api/products/generate-description', {
+            const response = await api.post('/products/generate-description', {
                 name: formData.name,
                 features: formData.category // Using category as a simple feature for now
             });
@@ -94,7 +95,7 @@ const AdminDashboard = () => {
 
         try {
             console.log('Generating details from image...');
-            const response = await axios.post('http://localhost:3001/api/products/generate-details-from-image', data, {
+            const response = await api.post('/products/generate-details-from-image', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             const { name, description, category } = response.data.data;

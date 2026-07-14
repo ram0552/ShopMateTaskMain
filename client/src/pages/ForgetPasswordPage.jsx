@@ -26,8 +26,8 @@ const ForgetPasswordPage = () => {
             setError("");
             setInfo("");
 
-            const response = await axios.post("http://localhost:3001/api/users/forget-password", {
-            email,
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/forget-password`, {
+                email,
             });
 
             setInfo(response.data.message || "OTP sent to your email address");
@@ -58,7 +58,7 @@ const ForgetPasswordPage = () => {
             setInfo("");
 
             const response = await axios.post(
-                "http://localhost:3001/api/users/reset-password",
+                `${import.meta.env.VITE_API_URL}/api/users/reset-password`,
                 {
                     email,
                     otp,

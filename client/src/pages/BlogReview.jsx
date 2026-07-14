@@ -7,7 +7,7 @@ const getAuthHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem('accessToken')}`
 });
 
-const API = 'http://localhost:3001/api/blogs';
+const API = `${import.meta.env.VITE_API_URL}/api/blogs`;
 
 const BlogReview = () => {
     const { id } = useParams();

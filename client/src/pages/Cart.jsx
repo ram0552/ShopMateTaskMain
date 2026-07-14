@@ -2,11 +2,14 @@ import React, { useContext } from 'react';
 import { ShopContext } from '../context/ShopContext';
 import { Trash2, Minus, Plus, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+
 
 const Cart = () => {
     const { cart, removeFromCart, updateQuantity, clearCart } = useContext(ShopContext);
 
     const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const navigate = useNavigate();
 
     const handleCheckout = () => {
         alert('Order Placed Successfully! (This is a demo)');
@@ -27,7 +30,17 @@ const Cart = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+            <div className="flex items-center justify-between mb-8">
+                <h1 className="text-3xl font-bold">Shopping Cart</h1>
+
+                {/* <button
+                    onClick={() => navigate("/home")}
+                    className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-100 transition"
+                >
+                    ← Continue Shopping
+                </button> */}
+            </div>
+            
 
             <div className="lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-start">
                 {/* Cart Items */}

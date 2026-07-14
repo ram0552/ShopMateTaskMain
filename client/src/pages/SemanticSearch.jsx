@@ -16,7 +16,7 @@ const SemanticSearch = () => {
             if (!query) return;
             setLoading(true);
             try {
-                const response = await axios.get(`http://localhost:3001/api/products/search/semantic?q=${encodeURIComponent(query)}`);
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/search/semantic?q=${encodeURIComponent(query)}`);
                 setResults(response.data);
             } catch (error) {
                 console.error("Error fetching semantic search results:", error);

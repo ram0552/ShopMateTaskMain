@@ -14,10 +14,12 @@
         "@emotion/styled": "^11.14.1",
         "@mui/material": "^9.1.1",
         "axios": "^1.6.0",
+        "jwt-decode": "^4.0.0",
         "lucide-react": "^0.292.0",
         "react": "^18.2.0",
         "react-chatbotify": "^2.5.0",
         "react-dom": "^18.2.0",
+        "react-icons": "^5.7.0",
         "react-router-dom": "^6.18.0"
     },
     "devDependencies": {

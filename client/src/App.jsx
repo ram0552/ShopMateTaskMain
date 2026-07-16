@@ -52,7 +52,7 @@ import SemanticSearch from './pages/SemanticSearch';
 import ShopMateChatbot from './components/ShopMateChatbot';
 import Logout from './pages/Logout';
 import Registerpage from './pages/Registerpage';
-import Loginpage from './pages/LoginPage';
+import Loginpage from './pages/Loginpage';
 import ForgetPasswordPage from './pages/ForgetPasswordPage';
 import BlogAdmin from './pages/BlogAdmin';
 import BlogReview from './pages/BlogReview';

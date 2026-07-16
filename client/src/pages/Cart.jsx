@@ -21,7 +21,7 @@ const Cart = () => {
             <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
                 <h2 className="text-3xl font-bold mb-4">Your Cart is Empty</h2>
                 <p className="text-gray-500 mb-8">Looks like you haven't added anything to your cart yet.</p>
-                <Link to="/" className="bg-black text-white px-8 py-3 rounded-full font-bold hover:bg-gray-800 transition-colors">
+                <Link to="/home" className="bg-black text-white px-8 py-3 rounded-full font-bold hover:bg-gray-800 transition-colors">
                     Start Shopping
                 </Link>
             </div>

@@ -2,9 +2,11 @@ const bcrypt = require('bcrypt');
 
 const { getDB } = require('../config//db');
 const jwt = require('jsonwebtoken');
-
+const { OAuth2Client } = require("google-auth-library");
 const { sendVerificationEmail, sendEmail } = require('../services/sendermail');
 
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const registerUser = async (req, res) => {
     try {
         const { username, email, password, role, phone_number } = req.body;
@@ -128,7 +130,7 @@ const loginUser = async (req, res) => {
             refreshToken,
             user: {
                 id: user._id,
-                name: user.name,
+                name: user.username,
                 email: user.email,
                 role: user.role
             }
@@ -140,6 +142,103 @@ const loginUser = async (req, res) => {
         });
     }
 };
+
+const googleLogin = async (req, res) => {
+    try {
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({
+                message: "Google token is required"
+            });
+        }
+
+        // Verify Google Token
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+
+        const {
+            sub,
+            email,
+            name,
+            picture,
+            email_verified
+        } = payload;
+
+        const db = getDB();
+
+        let user = await db.collection("users").findOne({
+            email: email.toLowerCase()
+        });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "Account not found. Please register first.",
+            });
+        }
+
+        // Existing Email but Local Account
+        else if (!user.googleId) {
+
+            await db.collection("users").updateOne(
+                { _id: user._id },
+                {
+                    $set: {
+                        googleId: sub,
+                        provider: "google",
+                        avatar: picture
+                    }
+                }
+            );
+
+            user.googleId = sub;
+            user.provider = "google";
+            user.avatar = picture;
+        }
+
+        // Generate ShopMate Tokens
+        const accessToken = generateAccessToken(user);
+
+        const refreshToken = generateRefreshToken(user);
+
+        await db.collection("users").updateOne(
+            { _id: user._id },
+            {
+                $set: {
+                    refresh_token: refreshToken
+                }
+            }
+        );
+
+        res.status(200).json({
+            message: "Google Login Successful",
+            accessToken,
+            refreshToken,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                avatar: user.avatar
+            }
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Google Login Failed",
+            error: error.message
+        });
+
+    }
+};
+
 
 const refreshUserToken = async (req, res) => {
     try {
@@ -287,6 +386,7 @@ module.exports = {
     loginUser,
     refreshUserToken,
     sendPasswordResetOTP,
-    resetPassword
+    resetPassword,
+    googleLogin
 }
 

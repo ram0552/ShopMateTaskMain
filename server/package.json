@@ -23,6 +23,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "google-auth-library": "^10.9.0",
     "jsonwebtoken": "^9.0.3",
     "langchain": "^1.5.1",
     "mongodb": "^7.0.0",

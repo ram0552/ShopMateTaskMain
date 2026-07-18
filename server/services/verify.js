@@ -1,5 +1,6 @@
 const jwt =require('jsonwebtoken');
 const {getDB} = require('../config/db');
+require("dotenv").config();
 
 const verifyEmail= async (req,res)=>{
     const {token} = req.params;
@@ -15,6 +16,7 @@ const verifyEmail= async (req,res)=>{
                 }
             }
         );
+        console.log("CLIENT_URL =", process.env.CLIENT_URL);
         res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
     } catch(err){
         console.error(err);

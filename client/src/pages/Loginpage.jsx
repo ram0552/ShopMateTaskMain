@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 const Loginpage = () => {
   const navigate = useNavigate();
@@ -89,6 +90,9 @@ const Loginpage = () => {
           <button type="submit" disabled={loading} style={styles.button}>
             {loading ? "Signing in..." : "Sign In"}
           </button>
+          <div className="mt-4 flex justify-center">
+                <GoogleLoginButton />
+          </div>
         </form>
 
         <p style={styles.footer}>

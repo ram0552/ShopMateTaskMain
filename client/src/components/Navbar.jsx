@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Search, Menu } from 'lucide-react';
 import { ShopContext } from '../context/ShopContext';
+import logo from "../assets/shopmate.png";
 
 const Navbar = () => {
     const { cart } = useContext(ShopContext);
@@ -26,9 +27,17 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16 items-center">
                     {/* Logo */}
-                    <Link to="/" className="flex-shrink-0 flex items-center">
-                        <span className="font-bold text-2xl tracking-tight text-gray-900">ShopMATE</span>
-                    </Link>
+                     <Link to="/" className="flex items-center gap-2">
+                            <img
+                                src={logo}
+                                alt="ShopMate Logo"
+                                className="h-9 w-9 md:h-11 md:w-11"
+                            />
+
+                            <span className="hidden font-bold text-xl sm:block">
+                                ShopMate
+                            </span>
+                        </Link>
 
                     {/* Search Bar */}
                     <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-lg mx-8 relative">

@@ -32,6 +32,9 @@ const Loginpage = () => {
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("refreshToken", response.data.refreshToken);
       localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      window.dispatchEvent(new Event('shopmate:auth-changed'));
+      
       if (response.data.user.role === "admin") {
         navigate("/admin");
       } else {

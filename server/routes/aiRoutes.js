@@ -5,9 +5,10 @@ const aiService = require('../services/aiService');
 const { runShopAgent } = require('../services/agentServices');
 const authenticate = require('../middleware/authenticate');
 const autherizeRoles = require('../middleware/autherization');
+const { aiLimiter } = require('../middleware/rateLimit.middleware');
 
 // POST /api/ai/ask-policy
-router.post('/ask-policy', async (req, res) => {
+router.post('/ask-policy', aiLimiter, async (req, res) => {
     try {
         const { question, history } = req.body;
         if (!question) {
@@ -25,7 +26,7 @@ router.post('/ask-policy', async (req, res) => {
 });
 
 // POST /api/ai/run-agent
-router.post('/agent', authenticate, autherizeRoles('admin', 'user'), async (req, res) => {
+router.post('/agent', aiLimiter, authenticate, autherizeRoles('admin', 'user'), async (req, res) => {
     try {
         const { message} = req.body;
         if (!message) {

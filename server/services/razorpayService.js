@@ -1,12 +1,29 @@
+const path = require('path');
+const dotenv = require('dotenv');
+// Ensure we load the .env file relative to this service file
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const Razorpay = require('razorpay');
+
+const Razorpay = require('razorpay'); 
 
 const getRazorpayInstance = () => {
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  const keyId = process.env.RAZORPAY_KEY_ID?.trim();
+  const keySecret = process.env.RAZORPAY_KEY_SECRET?.trim();
 
   if (!keyId || !keySecret) {
-    throw new Error('Razorpay credentials are not configured');
+    const error = new Error('Razorpay credentials are not configured');
+    error.statusCode = 500;
+    error.code = 'GATEWAY_CREDENTIALS_MISSING';
+    error.isGatewayError = true;
+    throw error;
+  }
+
+  if (!keyId.startsWith('rzp_test_') && !keyId.startsWith('rzp_live_')) {
+    const error = new Error('Razorpay Key ID must start with rzp_test_ or rzp_live_');
+    error.statusCode = 500;
+    error.code = 'GATEWAY_CONFIGURATION_ERROR';
+    error.isGatewayError = true;
+    throw error;
   }
 
   return new Razorpay({
@@ -37,12 +54,30 @@ const createGatewayOrder = async ({
 
   const razorpay = getRazorpayInstance();
 
-  return razorpay.orders.create({
-    amount: amountPaise,
-    currency: 'INR',
-    receipt,
-    notes,
-  });
+  try {
+    return await razorpay.orders.create({
+      amount: amountPaise,
+      currency: 'INR',
+      receipt,
+      notes,
+    });
+  } catch (err) {
+    err.isGatewayError = true;
+
+    if (err.statusCode === 401 || err.error?.description?.toLowerCase()?.includes('authentication')) {
+      err.gatewayCategory = 'AUTHENTICATION_ERROR';
+    } else if (err.statusCode === 400) {
+      err.gatewayCategory = 'VALIDATION_ERROR';
+    } else if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT' || err.code === 'ENOTFOUND') {
+      err.gatewayCategory = 'NETWORK_ERROR';
+    } else if (err.statusCode === 429) {
+      err.gatewayCategory = 'RATE_LIMIT_ERROR';
+    } else {
+      err.gatewayCategory = 'UPSTREAM_ERROR';
+    }
+
+    throw err;
+  }
 };
 
 module.exports = {

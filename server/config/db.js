@@ -92,4 +92,12 @@ const getClient = () => {
   return client;
 };
 
-module.exports = { connectDB, getDB, getClient };
+const closeDB = async () => {
+  if (client) {
+    await client.close();
+    client = undefined;
+    db = undefined;
+  }
+};
+
+module.exports = { connectDB, getDB, getClient, closeDB };

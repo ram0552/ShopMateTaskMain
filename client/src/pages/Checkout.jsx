@@ -55,6 +55,8 @@ const Checkout = () => {
 
     // Reuse the same key if a request must be retried.
     const idempotencyKeyRef = useRef(null);
+    // Synchronous ref to prevent duplicate submissions before React re-renders
+    const isSubmittingRef = useRef(false);
 
     const total = cart.reduce(
         (sum, item) =>
@@ -64,6 +66,9 @@ const Checkout = () => {
 
     const handleChange = (event) => {
         const { name, value } = event.target;
+
+        // Reset idempotency key when checkout details change
+        idempotencyKeyRef.current = null;
 
         setAddress((previous) => ({
             ...previous,
@@ -77,7 +82,8 @@ const handleSubmit = async (event) => {
 
     setError('');
 
-    if (submitting || checkoutOpen || placedOrder) return;
+    // Synchronously check both ref and state to prevent rapid double-clicks
+    if (isSubmittingRef.current || submitting || checkoutOpen || placedOrder) return;
 
     if (!cartInitialized || cartLoading) {
         setError('Please wait while your cart loads.');
@@ -89,11 +95,12 @@ const handleSubmit = async (event) => {
         return;
     }
 
+    isSubmittingRef.current = true;
+    setSubmitting(true);
+
     if (!idempotencyKeyRef.current) {
         idempotencyKeyRef.current = crypto.randomUUID();
     }
-
-    setSubmitting(true);
 
     try {
         const isRazorpay = paymentMethod === 'razorpay';
@@ -120,6 +127,8 @@ const handleSubmit = async (event) => {
 
             setPlacedOrder(order);
             await fetchCart();
+            isSubmittingRef.current = false;
+            setSubmitting(false);
             return;
         }
 
@@ -170,6 +179,7 @@ const handleSubmit = async (event) => {
 
             handler: async (paymentResponse) => {
                 setCheckoutOpen(false);
+                isSubmittingRef.current = true;
                 setSubmitting(true);
                 setError('');
 
@@ -207,12 +217,14 @@ const handleSubmit = async (event) => {
                         'Payment verification could not be completed. Check your order status before attempting another payment.'
                     );
                 } finally {
+                    isSubmittingRef.current = false;
                     setSubmitting(false);
                 }
             },
 
             modal: {
                 ondismiss: () => {
+                    isSubmittingRef.current = false;
                     setCheckoutOpen(false);
                     setSubmitting(false);
                     setError(
@@ -223,6 +235,7 @@ const handleSubmit = async (event) => {
         });
 
         checkout.on('payment.failed', () => {
+            isSubmittingRef.current = false;
             setCheckoutOpen(false);
             setSubmitting(false);
             setError(
@@ -231,15 +244,23 @@ const handleSubmit = async (event) => {
         });
 
         setCheckoutOpen(true);
+        isSubmittingRef.current = false;
         setSubmitting(false);
         checkout.open();
     } catch (submitError) {
-        
+        isSubmittingRef.current = false;
+        const errorCode = submitError.response?.data?.code;
+        const status = submitError.response?.status;
+
+        // Reset idempotency key for terminal or gateway failures so a subsequent user click
+        // can initiate a clean attempt with a fresh key.
         if (
-            submitError.response?.data?.code ===
-            'CHECKOUT_ATTEMPT_TERMINAL'
+            errorCode === 'CHECKOUT_ATTEMPT_TERMINAL' ||
+            errorCode === 'GATEWAY_ERROR' ||
+            status === 502 ||
+            status === 503
         ) {
-            idempotencyKeyRef.current = crypto.randomUUID();
+            idempotencyKeyRef.current = null;
         }
 
         setError(
@@ -262,6 +283,8 @@ const handleSubmit = async (event) => {
     }
 
     if (placedOrder) {
+        const isRazorpayPaid = placedOrder.paymentMethod === 'razorpay' && placedOrder.paymentStatus === 'paid';
+
         return (
             <main className="mx-auto max-w-2xl px-4 py-16">
                 <section className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
@@ -274,7 +297,9 @@ const handleSubmit = async (event) => {
                     </h1>
 
                     <p className="mt-3 text-gray-600">
-                        Your order has been recorded. Payment is due on delivery.
+                        {isRazorpayPaid
+                            ? 'Payment received! Your order is confirmed and being processed.'
+                            : 'Your order has been recorded. Payment is due on delivery.'}
                     </p>
 
                     <p className="mt-5 text-sm text-gray-500">
@@ -307,6 +332,7 @@ const handleSubmit = async (event) => {
             </main>
         );
     }
+
 
     if (cart.length === 0) {
         return (
@@ -433,9 +459,11 @@ const handleSubmit = async (event) => {
                                 name="paymentMethod"
                                 value="cod"
                                 checked={paymentMethod === 'cod'}
-                                onChange={(event) =>
-                                    setPaymentMethod(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setPaymentMethod(event.target.value);
+                                    idempotencyKeyRef.current = null;
+                                    setError('');
+                                }}
                                 className="mt-1 accent-gray-900"
                             />
 
@@ -461,9 +489,11 @@ const handleSubmit = async (event) => {
                                 name="paymentMethod"
                                 value="razorpay"
                                 checked={paymentMethod === 'razorpay'}
-                                onChange={(event) =>
-                                    setPaymentMethod(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setPaymentMethod(event.target.value);
+                                    idempotencyKeyRef.current = null;
+                                    setError('');
+                                }}
                                 className="mt-1 accent-gray-900"
                             />
 

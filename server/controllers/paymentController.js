@@ -2,6 +2,9 @@
 const { ObjectId } = require('mongodb');
 const { randomUUID } = require('crypto');
 const { getDB, getClient } = require('../config/db');
+const dotenv = require('dotenv');
+dotenv.config();
+
 const {
   createGatewayOrder,
   getRazorpayInstance,
@@ -191,7 +194,7 @@ if (existingOrder) {
             currency: existingOrder.currency,
             paymentStatus: existingOrder.paymentStatus,
         },
-        keyId: process.env.RAZORPAY_KEY_ID,
+        keyId: process.env.RAZORPAY_KEY_ID?.trim(),
     });
 }
 
@@ -419,17 +422,10 @@ if (existingOrder) {
         currency: gatewayOrder.currency,
         paymentStatus: 'pending',
       },
-      keyId: process.env.RAZORPAY_KEY_ID,
+      keyId: process.env.RAZORPAY_KEY_ID?.trim(),
     });
   } catch (error) {
-    // Inside server/controllers/paymentController.js - gateway creation catch block
-console.error('Create Razorpay order error:', {
-  message: error.message,
-  statusCode: error.statusCode,
-  gatewayDetails: error.error || null,
-  stack: error.stack,
-});
-        if (reservedOrder) { 
+    if (reservedOrder) {
       try {
         const recoverySession = client.startSession();
 
@@ -489,6 +485,68 @@ console.error('Create Razorpay order error:', {
         );
       }
     }
+
+    // Upstream gateway errors (from Razorpay SDK, network, or credentials) must not be treated as user session failures
+    if (
+      error.isGatewayError ||
+      reservedOrder ||
+      error.code === 'GATEWAY_CREDENTIALS_MISSING' ||
+      error.code === 'GATEWAY_CONFIGURATION_ERROR'
+    ) {
+      const isAuthError =
+        error.gatewayCategory === 'AUTHENTICATION_ERROR' ||
+        error.statusCode === 401 ||
+        error.error?.description?.toLowerCase()?.includes('authentication');
+      const isConfigError =
+        error.code === 'GATEWAY_CREDENTIALS_MISSING' ||
+        error.code === 'GATEWAY_CONFIGURATION_ERROR';
+      const isNetworkError =
+        error.gatewayCategory === 'NETWORK_ERROR' ||
+        error.code === 'ECONNRESET' ||
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ENOTFOUND';
+      const isValidationError =
+        error.gatewayCategory === 'VALIDATION_ERROR' ||
+        error.statusCode === 400;
+
+      let gatewayCategory = 'UPSTREAM_ERROR';
+      let userMessage = 'Unable to initialize payment. Please try again later.';
+
+      if (isAuthError) {
+        gatewayCategory = 'AUTHENTICATION_ERROR';
+        userMessage =
+          'Payment gateway authentication failed. Please verify merchant API credentials or try again later.';
+      } else if (isConfigError) {
+        gatewayCategory = 'CONFIGURATION_ERROR';
+        userMessage =
+          'Payment gateway is not properly configured. Please contact support.';
+      } else if (isNetworkError) {
+        gatewayCategory = 'NETWORK_ERROR';
+        userMessage =
+          'Payment gateway connection timed out or is unavailable. Please try again.';
+      } else if (isValidationError) {
+        gatewayCategory = 'VALIDATION_ERROR';
+        userMessage =
+          'Payment gateway rejected the order parameters. Please try again.';
+      }
+
+      console.error('[RAZORPAY] Gateway order creation failed:', {
+        orderId: reservedOrder?.orderId,
+        gatewayCategory,
+        statusCode: error.statusCode,
+        gatewayCode: error.error?.code,
+        gatewayDescription: error.error?.description,
+        message: error.message,
+      });
+
+      return res.status(502).json({
+        success: false,
+        code: 'GATEWAY_ERROR',
+        gatewayCategory,
+        message: userMessage,
+      });
+    }
+
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -500,11 +558,11 @@ console.error('Create Razorpay order error:', {
     if (error.statusCode) {
       return res.status(error.statusCode).json({
         success: false,
-        message: error.message,
+        message: error.message || 'Validation error',
       });
     }
 
-    console.error('Create Razorpay order error:', error);
+    console.error('Create Razorpay order unexpected error:', error);
 
     return res.status(500).json({
       success: false,
@@ -775,34 +833,6 @@ const verifyRazorpayPayment = async (req, res) => {
       });
     }
 
-    if (result.modifiedCount !== 1) {
-      // Another verification request may have completed first.
-      const currentOrder = await orders.findOne({
-        _id: order._id,
-        userId: customerId,
-      });
-
-      if (
-        currentOrder?.paymentStatus === 'paid' &&
-        currentOrder?.razorpayPaymentId === razorpayPaymentId
-      ) {
-        return res.status(200).json({
-          success: true,
-          message: 'Payment is already verified.',
-          order: {
-            orderId: currentOrder.orderId,
-            paymentStatus: currentOrder.paymentStatus,
-            orderStatus: currentOrder.orderStatus,
-          },
-        });
-      }
-
-      return res.status(409).json({
-        success: false,
-        message: 'Order status changed. Please refresh your order history.',
-      });
-    }
-
     return res.status(200).json({
       success: true,
       message: 'Payment verified successfully.',
@@ -813,7 +843,18 @@ const verifyRazorpayPayment = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Verify Razorpay payment error:', error);
+    console.error('Verify Razorpay payment error:', {
+      message: error.message,
+      statusCode: error.statusCode,
+      gatewayDetails: error.error || null,
+    });
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+      });
+    }
 
     return res.status(500).json({
       success: false,

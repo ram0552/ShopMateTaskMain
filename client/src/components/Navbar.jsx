@@ -69,6 +69,12 @@ const Navbar = () => {
                                 Blog AI
                             </Link>
                         )}
+                        <Link
+                            to="/orders"
+                            className="transition-colors hover:text-blue-500"
+                            >
+                            My Orders
+                            </Link>
                         <Link to="/logout" className='text-gray-500 hover:text-black font-medium text-sm'>
                             Logout
                         </Link>

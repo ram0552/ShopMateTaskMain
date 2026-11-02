@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-
+const dotenv = require('dotenv');
 const { getDB } = require('../config//db');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require("google-auth-library");
@@ -77,7 +77,7 @@ const generateAccessToken = (user) => {
             email: user.email,
             role: user.role
         },
-        "access_secret_key",
+        process.env.JWT_SECRET,
         { expiresIn: "15m" }
     );
 };
@@ -89,7 +89,7 @@ const generateRefreshToken = (user) => {
             email: user.email,
             role: user.role
         },
-        "refresh_secret_key",
+        process.env.JWT_REFRESH_SECRET,
         { expiresIn: "7d" }
     );
 };

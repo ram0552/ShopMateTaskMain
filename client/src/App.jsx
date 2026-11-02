@@ -56,6 +56,9 @@ import Loginpage from './pages/Loginpage';
 import ForgetPasswordPage from './pages/ForgetPasswordPage';
 import BlogAdmin from './pages/BlogAdmin';
 import BlogReview from './pages/BlogReview';
+import Checkout from './pages/Checkout';
+import OrdersPage from './pages/OrdersPage';
+import OrderDetailsPage from './pages/OrderDetailsPage';
 
 
 // Wraps layout so we can use useLocation inside Router
@@ -95,6 +98,30 @@ function AppLayout() {
                         <Cart />
                     </ProtectedRoute>
                 } />
+                <Route
+                    path="/checkout"
+                    element={
+                        <ProtectedRoute>
+                            <Checkout />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/orders"
+                    element={
+                        <ProtectedRoute>
+                        <OrdersPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/orders/:orderId"
+                    element={
+                        <ProtectedRoute>
+                        <OrderDetailsPage />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route path="/semantic-search" element={
                     <ProtectedRoute>
                         <SemanticSearch />

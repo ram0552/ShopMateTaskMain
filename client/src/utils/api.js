@@ -21,9 +21,26 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Do not attempt token refresh for authentication endpoints, gateway errors, or if already retried
+    const isAuthEndpoint =
+      typeof originalRequest?.url === 'string' &&
+      (originalRequest.url.includes('/users/login') ||
+        originalRequest.url.includes('/users/refresh') ||
+        originalRequest.url.includes('/users/register'));
+
+    const isGatewayError =
+      error.response?.data?.code === 'GATEWAY_ERROR' ||
+      (typeof error.response?.data?.code === 'string' &&
+        error.response.data.code.startsWith('GATEWAY_')) ||
+      error.response?.status === 502 ||
+      error.response?.status === 503;
+
     if (
       error.response &&
       error.response.status === 401 &&
+      !isAuthEndpoint &&
+      !isGatewayError &&
+      originalRequest &&
       !originalRequest._retry
     ) {
       originalRequest._retry = true;

@@ -19,15 +19,40 @@ const AdminDashboard = () => {
         stock: '',
         image: ''
     });
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 10,
+        totalProducts: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+    });
 
     useEffect(() => {
         fetchProducts();
     }, []);
 
-    const fetchProducts = async () => {
+    const fetchProducts = async (page = 1) => {
         try {
-            const response = await api.get('/products');
-            setProducts(response.data);
+            const response = await api.get('/products', {
+                params: {
+                    page,
+                    limit: 10,
+                },
+            });
+
+            setProducts(response.data.products || []);
+
+            setPagination(
+                response.data.pagination || {
+                    page,
+                    limit: 10,
+                    totalProducts: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false,
+                }
+            );
         } catch (error) {
             console.error('Error fetching products:', error);
         }
@@ -37,7 +62,7 @@ const AdminDashboard = () => {
         if (window.confirm('Are you sure you want to delete this product?')) {
             try {
                 await api.delete(`/products/${id}`);
-                fetchProducts();
+                fetchProducts(pagination.page);
             } catch (error) {
                 console.error('Error deleting product:', error);
             }
@@ -192,6 +217,31 @@ const AdminDashboard = () => {
                         ))}
                     </tbody>
                 </table>
+                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+                        <div className="text-sm text-gray-500">
+                            Page {pagination.page} of {pagination.totalPages || 1}
+                            {' · '}
+                            {pagination.totalProducts} products
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => fetchProducts(pagination.page - 1)}
+                                disabled={!pagination.hasPreviousPage}
+                                className="px-4 py-2 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                            >
+                                Previous
+                            </button>
+
+                            <button
+                                onClick={() => fetchProducts(pagination.page + 1)}
+                                disabled={!pagination.hasNextPage}
+                                className="px-4 py-2 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
             </div>
 
             {/* Modal */}

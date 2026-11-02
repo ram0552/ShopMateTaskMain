@@ -13,19 +13,85 @@ const getCollection = () => getDB().collection(collectionName);
 
 // @desc    Fetch all products
 // @route   GET /api/products
+// const getProducts = async (req, res) => {
+//     try {
+//         const { search } = req.query;
+//         const query = {};
+
+//         if (search) {
+//             query.name = { $regex: search, $options: 'i' };
+//         }
+
+//         const products = await getCollection().find(query).toArray();
+//         res.json(products);
+//     } catch (error) {
+//         res.status(500).json({ message: 'Server Error', error: error.message });
+//     }
+// };
 const getProducts = async (req, res) => {
     try {
-        const { search } = req.query;
+        const {
+            search,
+            category,
+            page = 1,
+            limit = 20
+        } = req.query;
+
+        const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
+        const parsedLimit = Math.min(
+            Math.max(Number.parseInt(limit, 10) || 20, 1),
+            100
+        );
+
+        const skip = (parsedPage - 1) * parsedLimit;
+
         const query = {};
 
-        if (search) {
-            query.name = { $regex: search, $options: 'i' };
+        if (search && search.trim()) {
+            query.name = {
+                $regex: search.trim(),
+                $options: 'i'
+            };
+        }
+         // Apply category filtering before pagination.
+        if (category && category !== 'All') {
+            query.category = category;
         }
 
-        const products = await getCollection().find(query).toArray();
-        res.json(products);
+        const collection = getCollection();
+
+        const [products, totalProducts] = await Promise.all([
+            collection
+                .find(query)
+                .skip(skip)
+                .limit(parsedLimit)
+                .toArray(),
+
+            collection.countDocuments(query)
+        ]);
+
+        const totalPages = Math.ceil(totalProducts / parsedLimit);
+
+        res.json({
+            success: true,
+            products,
+            pagination: {
+                page: parsedPage,
+                limit: parsedLimit,
+                totalProducts,
+                totalPages,
+                hasNextPage: parsedPage < totalPages,
+                hasPreviousPage: parsedPage > 1
+            }
+        });
     } catch (error) {
-        res.status(500).json({ message: 'Server Error', error: error.message });
+        console.error("Get Products Error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: 'Server Error',
+            error: error.message
+        });
     }
 };
 

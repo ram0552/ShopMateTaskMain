@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext,useEffect } from 'react';
 import { ShopContext } from '../context/ShopContext';
 import { Trash2, Minus, Plus, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -6,15 +6,45 @@ import { useNavigate } from "react-router-dom";
 
 
 const Cart = () => {
-    const { cart, removeFromCart, updateQuantity, clearCart } = useContext(ShopContext);
+            const {
+            cart,
+            cartLoading,
+            cartInitialized,
+            removeFromCart,
+            updateQuantity,
+            clearCart,
+            fetchCart
+        } = useContext(ShopContext);
+
+        useEffect(() => {
+        const token = localStorage.getItem("accessToken");
+
+        if (token) {
+            fetchCart();
+        }
+    }, [fetchCart]);
 
     const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
     const navigate = useNavigate();
 
     const handleCheckout = () => {
-        alert('Order Placed Successfully! (This is a demo)');
-        clearCart();
+        navigate('/checkout');
     };
+    if (cartLoading || !cartInitialized) {
+    return (
+        <div
+            className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4"
+            role="status"
+            aria-live="polite"
+        >
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-black" />
+            <p className="mt-4 text-gray-500">
+                Loading your cart...
+            </p>
+        </div>
+    );
+}
+
 
     if (cart.length === 0) {
         return (
@@ -33,12 +63,12 @@ const Cart = () => {
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-3xl font-bold">Shopping Cart</h1>
 
-                {/* <button
+                <button
                     onClick={() => navigate("/home")}
                     className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-100 transition"
                 >
                     ← Continue Shopping
-                </button> */}
+                </button>
             </div>
             
 

@@ -9,6 +9,8 @@ const Logout = () => {
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
 
+         window.dispatchEvent(new Event('shopmate:auth-changed'));
+
         const timeout = setTimeout(() => {
             navigate('/login');
         }, 1000);

@@ -4,15 +4,17 @@ import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 
 const Home = () => {
-    const { products, loading, fetchProducts, addToCart } = useContext(ShopContext);
+    const { products, loading,pagination, fetchProducts, addToCart } = useContext(ShopContext);
     const [filter, setFilter] = useState('All');
     const [filteredProducts, setFilteredProducts] = useState([]);
+    const [page, setPage] = useState(1);
+    const limit = 20;
 
     const categories = ['All', 'Electronics', 'Clothing', 'Accessories', 'Furniture', 'Home'];
 
     useEffect(() => {
-        fetchProducts();
-    }, []);
+    fetchProducts('', page, limit, filter, true);
+}, [page, filter]);
 
     useEffect(() => {
         if (filter === 'All') {
@@ -53,7 +55,9 @@ const Home = () => {
                     {categories.map(cat => (
                         <button
                             key={cat}
-                            onClick={() => setFilter(cat)}
+                            onClick={() =>{ setFilter(cat);
+                                setPage(1);}
+                            }
                             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filter === cat
                                     ? 'bg-black text-white'
                                     : 'bg-white text-gray-600 border border-gray-200 hover:border-black'
@@ -97,6 +101,29 @@ const Home = () => {
                         </div>
                     ))}
                 </div>
+                {pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-4 mt-10">
+                        <button
+                            onClick={() => setPage((current) => current - 1)}
+                            disabled={!pagination.hasPreviousPage || loading}
+                            className="px-5 py-2 rounded-lg border disabled:opacity-40"
+                        >
+                            Previous
+                        </button>
+
+                        <span className="text-sm text-gray-600">
+                            Page {pagination.page} of {pagination.totalPages}
+                        </span>
+
+                        <button
+                            onClick={() => setPage((current) => current + 1)}
+                            disabled={!pagination.hasNextPage || loading}
+                            className="px-5 py-2 rounded-lg border disabled:opacity-40"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
 
                 {filteredProducts.length === 0 && (
                     <div className="text-center py-20 text-gray-500">

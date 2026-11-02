@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="shopmateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="6" fill="url(#shopmateGrad)" />
+  <path d="M10 11 L22 11 L20 23 L12 23 Z" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round" />
+  <path d="M13 11 C13 8.5 14.34 7 16 7 C17.66 7 19 8.5 19 11" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
+</svg>
+

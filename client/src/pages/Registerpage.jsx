@@ -12,21 +12,91 @@ const Registerpage = () => {
     role: "user",
   });
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+  const [warning, setWarning] = useState("");
   const [loading, setLoading] = useState(false);
+  const [canResend, setCanResend] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resending, setResending] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleResendVerification = async () => {
+    const targetEmail = resendEmail || formData.email;
+    if (!targetEmail) {
+      setError("Please provide an email address to resend verification.");
+      return;
+    }
+
+    setResending(true);
+    setError("");
+    setInfo("");
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/users/resend-verification`,
+        { email: targetEmail }
+      );
+      setInfo(response.data?.message || "Verification email sent successfully! Please check your inbox.");
+      setWarning("");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Failed to resend verification email. Please try again later."
+      );
+    } finally {
+      setResending(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setInfo("");
+    setWarning("");
+    setCanResend(false);
+
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/register`, formData);
-      navigate("/login", { state: { message: "Registration successful. Please check your email to verify your account." } });
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/users/register`,
+        formData
+      );
+
+      // Case 1: Registration successful and verification email sent
+      if (response.data?.emailSent) {
+        navigate("/login", {
+          state: {
+            message:
+              response.data?.message ||
+              "Registration successful. Please check your email to verify your account.",
+          },
+        });
+        return;
+      }
+
+      // Case 2: Account created, but verification email delivery failed
+      setWarning(
+        response.data?.message ||
+        "Account created successfully, but we were unable to send the verification email. Please click below to resend the email."
+      );
+      setCanResend(true);
+      setResendEmail(formData.email);
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed.");
+      // Case 3: Email already registered or duplicate submission
+      const responseData = err.response?.data;
+      if (responseData?.canResend) {
+        setWarning(responseData.message);
+        setCanResend(true);
+        setResendEmail(formData.email);
+      } else {
+        setError(
+          responseData?.message ||
+          "Registration failed. Please check your information and try again."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -40,6 +110,26 @@ const Registerpage = () => {
         <p style={styles.subtitle}>Sign up to start shopping</p>
 
         {error && <div style={styles.error}>{error}</div>}
+        {warning && <div style={styles.warning}>{warning}</div>}
+        {info && <div style={styles.info}>{info}</div>}
+
+        {canResend && (
+          <div style={{ marginBottom: "16px" }}>
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={resending}
+              style={styles.resendButton}
+            >
+              {resending ? "Sending verification email..." : "Resend Verification Email"}
+            </button>
+            <div style={{ marginTop: "8px" }}>
+              <Link to="/login" style={styles.link}>
+                Proceed to Sign In
+              </Link>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.field}>
@@ -76,6 +166,7 @@ const Registerpage = () => {
               value={formData.password}
               onChange={handleChange}
               required
+              minLength={6}
               placeholder="••••••••"
               style={styles.input}
             />
@@ -106,7 +197,15 @@ const Registerpage = () => {
             </select>
           </div>
 
-          <button type="submit" disabled={loading} style={styles.button}>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              ...styles.button,
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
             {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
@@ -165,6 +264,41 @@ const styles = {
     fontSize: "14px",
     marginBottom: "16px",
     textAlign: "left",
+    lineHeight: "1.4",
+  },
+  warning: {
+    backgroundColor: "#fffbeb",
+    border: "1px solid #fcd34d",
+    color: "#92400e",
+    borderRadius: "8px",
+    padding: "12px 14px",
+    fontSize: "14px",
+    marginBottom: "16px",
+    textAlign: "left",
+    lineHeight: "1.4",
+  },
+  info: {
+    backgroundColor: "#ecfdf5",
+    border: "1px solid #6ee7b7",
+    color: "#065f46",
+    borderRadius: "8px",
+    padding: "10px 14px",
+    fontSize: "14px",
+    marginBottom: "16px",
+    textAlign: "left",
+    lineHeight: "1.4",
+  },
+  resendButton: {
+    padding: "10px 16px",
+    backgroundColor: "#1f2937",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+    width: "100%",
+    transition: "background-color 0.2s ease",
   },
   form: {
     display: "flex",
@@ -220,7 +354,8 @@ const styles = {
   link: {
     color: "#111827",
     fontWeight: "600",
-    textDecoration: "none",
+    textDecoration: "underline",
+    fontSize: "14px",
   },
 };
 

@@ -11,22 +11,58 @@ const Loginpage = () => {
   const errorParam = queryParams.get("error");
 
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState(errorParam || "");
+  const [error, setError] = useState(
+    errorParam
+      ? decodeURIComponent(errorParam.replace(/\+/g, " "))
+      : verifiedParam === "false"
+      ? "Email verification failed or link has expired."
+      : ""
+  );
   const [info, setInfo] = useState(
     verifiedParam === "true"
       ? "Email verified successfully! You can now sign in."
       : (location.state?.message || "")
   );
   const [loading, setLoading] = useState(false);
+  const [canResend, setCanResend] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      setError("Please enter your registered email address above.");
+      return;
+    }
+
+    setResending(true);
+    setError("");
+    setInfo("");
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/users/resend-verification`,
+        { email: formData.email }
+      );
+      setInfo(response.data?.message || "Verification email sent successfully! Please check your inbox.");
+      setCanResend(false);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Failed to resend verification email. Please try again later."
+      );
+    } finally {
+      setResending(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setCanResend(false);
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/login`, formData);
       localStorage.setItem("accessToken", response.data.accessToken);
@@ -41,7 +77,11 @@ const Loginpage = () => {
         navigate("/home");
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
+      const responseData = err.response?.data;
+      setError(responseData?.message || "Login failed. Please check your credentials.");
+      if (responseData?.canResend) {
+        setCanResend(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -56,6 +96,19 @@ const Loginpage = () => {
 
         {error && <div style={styles.error}>{error}</div>}
         {info && <div style={styles.info}>{info}</div>}
+
+        {canResend && (
+          <div style={{ marginBottom: "16px" }}>
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={resending}
+              style={styles.resendButton}
+            >
+              {resending ? "Sending verification email..." : "Resend Verification Email"}
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.field}>
@@ -74,7 +127,6 @@ const Loginpage = () => {
           <div style={styles.field}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <label style={styles.label}>Password</label>
-
             </div>
             <input
               type="password"
@@ -90,11 +142,19 @@ const Loginpage = () => {
             <Link to="/forget-password" style={styles.forgotLink}>Forgot Password?</Link>
           </div>
 
-          <button type="submit" disabled={loading} style={styles.button}>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              ...styles.button,
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? "not-allowed" : "pointer"
+            }}
+          >
             {loading ? "Signing in..." : "Sign In"}
           </button>
           <div className="mt-4 flex justify-center">
-                <GoogleLoginButton />
+            <GoogleLoginButton />
           </div>
         </form>
 
@@ -152,21 +212,35 @@ const styles = {
     fontSize: "14px",
     marginBottom: "16px",
     textAlign: "left",
+    lineHeight: "1.4",
   },
   info: {
     backgroundColor: "#ecfdf5",
-    border: "1px solid #a7f3d0",
-    color: "#059669",
+    border: "1px solid #6ee7b7",
+    color: "#065f46",
     borderRadius: "8px",
     padding: "10px 14px",
     fontSize: "14px",
     marginBottom: "16px",
     textAlign: "left",
+    lineHeight: "1.4",
+  },
+  resendButton: {
+    padding: "10px 16px",
+    backgroundColor: "#1f2937",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+    width: "100%",
+    transition: "background-color 0.2s ease",
   },
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: "16px",
+    gap: "14px",
   },
   field: {
     display: "flex",
@@ -186,8 +260,18 @@ const styles = {
     fontSize: "15px",
     color: "#111827",
     outline: "none",
-    transition: "border-color 0.2s",
     backgroundColor: "#f9fafb",
+  },
+  forgetPassword: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginTop: "2px",
+    marginBottom: "4px",
+  },
+  forgotLink: {
+    fontSize: "13px",
+    color: "#4b5563",
+    textDecoration: "none",
   },
   button: {
     marginTop: "8px",
@@ -199,7 +283,6 @@ const styles = {
     fontSize: "15px",
     fontWeight: "600",
     cursor: "pointer",
-    transition: "background-color 0.2s",
   },
   footer: {
     marginTop: "20px",
@@ -210,12 +293,6 @@ const styles = {
     color: "#111827",
     fontWeight: "600",
     textDecoration: "none",
-  },
-  forgotLink: {
-    fontSize: "13px",
-    color: "#111827",
-    textDecoration: "none",
-    fontWeight: "500",
   },
 };
 

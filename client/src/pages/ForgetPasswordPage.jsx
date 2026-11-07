@@ -1,6 +1,6 @@
-import React,{useState} from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 
 const ForgetPasswordPage = () => {
     const navigate = useNavigate();
@@ -26,7 +26,7 @@ const ForgetPasswordPage = () => {
             setError("");
             setInfo("");
 
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/forget-password`, {
+            const response = await api.post("/users/forget-password", {
                 email,
             });
 
@@ -57,8 +57,8 @@ const ForgetPasswordPage = () => {
             setError("");
             setInfo("");
 
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_URL}/api/users/reset-password`,
+            const response = await api.post(
+                "/users/reset-password",
                 {
                     email,
                     otp,

@@ -200,7 +200,7 @@ const resendVerificationEmail = async (req, res) => {
                 userId: user._id,
                 email: normalizedEmail
             },
-            process.env.JWT_SECRET || 'default_jwt_secret',
+            process.env.JWT_SECRET,
             { expiresIn: '1d' }
         );
 
@@ -228,7 +228,7 @@ const generateAccessToken = (user) => {
             email: user.email,
             role: user.role
         },
-        process.env.JWT_SECRET || 'default_jwt_secret',
+        process.env.JWT_SECRET,
         { expiresIn: "15m" }
     );
 };
@@ -240,7 +240,7 @@ const generateRefreshToken = (user) => {
             email: user.email,
             role: user.role
         },
-        process.env.JWT_REFRESH_SECRET || 'refresh_secret_key',
+        process.env.JWT_REFRESH_SECRET,
         { expiresIn: "7d" }
     );
 };

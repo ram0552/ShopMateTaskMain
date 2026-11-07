@@ -6,10 +6,10 @@ require('dotenv').config();
  * Handles port parsing, TLS settings, connection timeouts, and authentication safely.
  */
 const getTransporter = () => {
-    const host = process.env.MAIL_SERVER;
+    const host = process.env.MAIL_SERVER?.trim();
     const port = Number.parseInt(process.env.MAIL_PORT || '587', 10);
-    const user = process.env.MAIL_USERNAME;
-    const pass = process.env.MAIL_PASSWORD;
+    const user = process.env.MAIL_USERNAME?.trim();
+    const pass = process.env.MAIL_PASSWORD?.trim();
 
     if (!host || !user || !pass) {
         throw new Error(
@@ -19,6 +19,26 @@ const getTransporter = () => {
                     .join(', ')
             }`
         );
+    }
+
+    const isGmail = host === 'smtp.gmail.com' || host.toLowerCase().includes('gmail');
+
+    // For Gmail, Nodemailer's built-in 'gmail' service is the most reliable configuration
+    // as it manages ports, STARTTLS, and SSL/TLS handshakes without cipher mismatches.
+    if (isGmail) {
+        return nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user,
+                pass
+            },
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            socketTimeout: 20000,
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
     }
 
     const isSecure = port === 465 || (process.env.MAIL_USE_TLS === 'true' && port !== 587);
@@ -31,11 +51,10 @@ const getTransporter = () => {
             user,
             pass
         },
-        connectionTimeout: 10000, // 10 seconds timeout
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000,
         tls: {
-            // Allows flexibility in restricted cloud container environments
             rejectUnauthorized: false
         }
     });
@@ -53,14 +72,14 @@ const sendVerificationEmail = async (email, name, token) => {
     const serverUrl = (process.env.SERVER_URL || 'http://localhost:3001').replace(/\/+$/, '');
     const verificationLink = `${serverUrl}/api/users/verify-email/${token}`;
     const fromAddress = process.env.MAIL_USERNAME
-        ? `"ShopMate" <${process.env.MAIL_USERNAME}>`
+        ? `"ShopMate" <${process.env.MAIL_USERNAME.trim()}>`
         : 'no-reply@shopmate.com';
 
     const transporter = getTransporter();
 
     return await transporter.sendMail({
         from: fromAddress,
-        to: email,
+        to: email.trim(),
         subject: 'Verify your ShopMate Account',
         text: `Hello ${name},\n\nPlease verify your email address by visiting this link:\n${verificationLink}\n\nIf you did not create an account on ShopMate, you can safely ignore this email.`,
         html: `
@@ -87,12 +106,12 @@ const sendVerificationEmail = async (email, name, token) => {
 const sendEmail = async ({ to, subject, text, html }) => {
     const transporter = getTransporter();
     const fromAddress = process.env.MAIL_USERNAME
-        ? `"ShopMate" <${process.env.MAIL_USERNAME}>`
+        ? `"ShopMate" <${process.env.MAIL_USERNAME.trim()}>`
         : 'no-reply@shopmate.com';
 
     return await transporter.sendMail({
         from: fromAddress,
-        to,
+        to: typeof to === 'string' ? to.trim() : to,
         subject,
         text,
         html

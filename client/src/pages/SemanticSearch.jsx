@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { ShopContext } from '../context/ShopContext';
 import { Plus } from 'lucide-react';
 
@@ -16,7 +16,7 @@ const SemanticSearch = () => {
             if (!query) return;
             setLoading(true);
             try {
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/search/semantic?q=${encodeURIComponent(query)}`);
+                const response = await api.get(`/products/search/semantic?q=${encodeURIComponent(query)}`);
                 setResults(response.data);
             } catch (error) {
                 console.error("Error fetching semantic search results:", error);

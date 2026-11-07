@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 
 const Registerpage = () => {
   const navigate = useNavigate();
@@ -35,10 +35,9 @@ const Registerpage = () => {
     setInfo("");
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/users/resend-verification`,
-        { email: targetEmail }
-      );
+      const response = await api.post("/users/resend-verification", {
+        email: targetEmail,
+      });
       setInfo(response.data?.message || "Verification email sent successfully! Please check your inbox.");
       setWarning("");
     } catch (err) {
@@ -60,10 +59,7 @@ const Registerpage = () => {
     setCanResend(false);
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/users/register`,
-        formData
-      );
+      const response = await api.post("/users/register", formData);
 
       // Case 1: Registration successful and verification email sent
       if (response.data?.emailSent) {

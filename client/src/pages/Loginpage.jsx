@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import api from "../utils/api";
 import GoogleLoginButton from "../components/GoogleLoginButton";
 
 const Loginpage = () => {
@@ -42,10 +42,9 @@ const Loginpage = () => {
     setInfo("");
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/users/resend-verification`,
-        { email: formData.email }
-      );
+      const response = await api.post("/users/resend-verification", {
+        email: formData.email,
+      });
       setInfo(response.data?.message || "Verification email sent successfully! Please check your inbox.");
       setCanResend(false);
     } catch (err) {
@@ -64,7 +63,7 @@ const Loginpage = () => {
     setError("");
     setCanResend(false);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/login`, formData);
+      const response = await api.post("/users/login", formData);
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("refreshToken", response.data.refreshToken);
       localStorage.setItem("user", JSON.stringify(response.data.user));

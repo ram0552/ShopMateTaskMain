@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Check, RotateCcw, ArrowLeft } from 'lucide-react';
-
-const getAuthHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-});
-
-const API = `${import.meta.env.VITE_API_URL}/api/blogs`;
 
 const BlogReview = () => {
     const { id } = useParams();
@@ -19,7 +13,7 @@ const BlogReview = () => {
 
     const fetchBlog = async () => {
         try {
-            const response = await axios.get(`${API}/${id}`, { headers: getAuthHeaders() });
+            const response = await api.get(`/blogs/${id}`);
             setBlog(response.data);
         } catch (error) {
             console.error('Error fetching blog:', error);
@@ -38,11 +32,7 @@ const BlogReview = () => {
 
         setIsSubmitting(true);
         try {
-            const response = await axios.post(
-                `${API}/${id}/decision`,
-                { action, feedback },
-                { headers: getAuthHeaders() }
-            );
+            const response = await api.post(`/blogs/${id}/decision`, { action, feedback });
             if (action === 'approve') {
                 navigate('/admin/blogs');
             } else {

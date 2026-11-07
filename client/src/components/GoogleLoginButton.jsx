@@ -1,20 +1,14 @@
 import { GoogleLogin } from "@react-oauth/google";
-import axios from "axios";
+import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
 
 const GoogleLoginButton = () => {
     const navigate = useNavigate();
     const handleSuccess = async (credentialResponse) => {
-    
-
         try {
-
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_URL}/api/users/google`,
-                {
-                    token: credentialResponse.credential
-                }
-            );
+            const response = await api.post("/users/google", {
+                token: credentialResponse.credential
+            });
 
             localStorage.setItem(
                 "accessToken",
@@ -30,47 +24,42 @@ const GoogleLoginButton = () => {
                 "user",
                 JSON.stringify(response.data.user)
             );
-            // if (user.role === "admin") {
-            //     navigate("/admin");
-            // } else {
-            //     navigate("/home");
-            // }
+
+            window.dispatchEvent(new Event('shopmate:auth-changed'));
+
             if (response.data.user.role === "admin") {
-                    navigate("/admin");
-                } else {
-                    navigate("/home");
-                }
-
-            console.log("Login Success");
-
-        }  catch (err) {
-                if (err.response?.status === 404) {
-                    alert(err.response.data.message);
-
-                    navigate("/register", {
-                        state: {
-                            email: credentialResponse?.email
-                        }
-                    });
-                } else {
-                    alert("Google login failed. Please try again.");
-                }
+                navigate("/admin");
+            } else {
+                navigate("/home");
             }
 
+            console.log("Login Success");
+        } catch (err) {
+            if (err.response?.status === 404) {
+                alert(err.response.data.message);
+
+                navigate("/register", {
+                    state: {
+                        email: credentialResponse?.email
+                    }
+                });
+            } else {
+                alert("Google login failed. Please try again.");
+            }
+        }
     };
 
-    
-  const handleError = () => {
-    console.log("Google Login Failed");
-  };
+    const handleError = () => {
+        console.log("Google Login Failed");
+    };
 
-  return (
-    <GoogleLogin
-      onSuccess={handleSuccess}
-      onError={handleError}
-      useOneTap={false}
-    />
-  );
+    return (
+        <GoogleLogin
+            onSuccess={handleSuccess}
+            onError={handleError}
+            useOneTap={false}
+        />
+    );
 };
 
 export default GoogleLoginButton;
